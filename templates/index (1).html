@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Credit Card Churn Prediction</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: Arial, sans-serif; background: #f0f4f8; min-height: 100vh; }
+        .header { background: #1565C0; color: white; padding: 20px; text-align: center; }
+        .header h1 { font-size: 24px; }
+        .header p { font-size: 13px; margin-top: 5px; opacity: 0.85; }
+        .container { max-width: 700px; margin: 30px auto; background: white;
+                     border-radius: 8px; padding: 30px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        h2 { color: #1565C0; margin-bottom: 20px; font-size: 18px; }
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .form-group { display: flex; flex-direction: column; }
+        label { font-size: 13px; color: #555; margin-bottom: 4px; font-weight: bold; }
+        input, select { padding: 8px 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; }
+        input:focus, select:focus { outline: none; border-color: #1565C0; }
+        .btn { background: #1565C0; color: white; border: none; padding: 12px 30px;
+               border-radius: 4px; font-size: 15px; cursor: pointer; margin-top: 20px; width: 100%; }
+        .btn:hover { background: #0d47a1; }
+        .result { margin-top: 20px; padding: 15px; border-radius: 6px; text-align: center;
+                  font-size: 16px; font-weight: bold; display: none; }
+        .high-risk { background: #ffebee; color: #c62828; border: 1px solid #ef9a9a; }
+        .low-risk  { background: #e8f5e9; color: #2e7d32; border: 1px solid #a5d6a7; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Credit Card Churn Prediction System</h1>
+        <p>Symbiosis Institute of Management Studies | Ex-MBA Project</p>
+    </div>
+    <div class="container">
+        <h2>Enter Customer Details</h2>
+        <div class="form-grid">
+            <div class="form-group">
+                <label>Age</label>
+                <input type="number" id="age" placeholder="e.g. 45">
+            </div>
+            <div class="form-group">
+                <label>Dependent Count</label>
+                <input type="number" id="dep" placeholder="e.g. 2">
+            </div>
+            <div class="form-group">
+                <label>Months on Book</label>
+                <input type="number" id="mob" placeholder="e.g. 36">
+            </div>
+            <div class="form-group">
+                <label>Credit Limit (INR)</label>
+                <input type="number" id="cl" placeholder="e.g. 120000">
+            </div>
+            <div class="form-group">
+                <label>Total Revolving Balance</label>
+                <input type="number" id="trb" placeholder="e.g. 0">
+            </div>
+            <div class="form-group">
+                <label>Avg Utilization Ratio</label>
+                <input type="number" step="0.01" id="aur" placeholder="e.g. 0.05">
+            </div>
+            <div class="form-group">
+                <label>Months Inactive (12mon)</label>
+                <input type="number" id="mi" placeholder="e.g. 4">
+            </div>
+            <div class="form-group">
+                <label>Contacts Count (12mon)</label>
+                <input type="number" id="cc" placeholder="e.g. 3">
+            </div>
+            <div class="form-group">
+                <label>Total Trans Amount (INR)</label>
+                <input type="number" id="tta" placeholder="e.g. 45000">
+            </div>
+            <div class="form-group">
+                <label>Total Trans Count</label>
+                <input type="number" id="ttc" placeholder="e.g. 28">
+            </div>
+            <div class="form-group">
+                <label>Total Ct Chng Q4 Q1</label>
+                <input type="number" step="0.01" id="tcc" placeholder="e.g. 0.42">
+            </div>
+            <div class="form-group">
+                <label>Total Amt Chng Q4 Q1</label>
+                <input type="number" step="0.01" id="tac" placeholder="e.g. 0.38">
+            </div>
+        </div>
+        <button class="btn" onclick="predict()">Predict Churn Risk</button>
+        <div class="result" id="result"></div>
+    </div>
+    <script>
+        async function predict() {
+            const data = {
+                Age: parseInt(document.getElementById('age').value),
+                Dependent_Count: parseInt(document.getElementById('dep').value),
+                Months_on_Book: parseInt(document.getElementById('mob').value),
+                Credit_Limit_INR: parseFloat(document.getElementById('cl').value),
+                Total_Revolving_Bal: parseFloat(document.getElementById('trb').value),
+                Avg_Open_To_Buy: parseFloat(document.getElementById('cl').value),
+                Avg_Utilization_Ratio: parseFloat(document.getElementById('aur').value),
+                Months_Inactive_12mon: parseInt(document.getElementById('mi').value),
+                Contacts_Count_12mon: parseInt(document.getElementById('cc').value),
+                Total_Trans_Amt_INR: parseFloat(document.getElementById('tta').value),
+                Total_Trans_Ct: parseInt(document.getElementById('ttc').value),
+                Total_Ct_Chng_Q4_Q1: parseFloat(document.getElementById('tcc').value),
+                Total_Amt_Chng_Q4_Q1: parseFloat(document.getElementById('tac').value)
+            };
+            try {
+                const res = await fetch('/predict', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(data)
+                });
+                const out = await res.json();
+                const div = document.getElementById('result');
+                div.style.display = 'block';
+                div.className = 'result ' + (out.prediction === 1 ? 'high-risk' : 'low-risk');
+                div.innerHTML = `Risk Level: ${out.risk_level} | Churn Probability: ${(out.churn_probability * 100).toFixed(1)}%`;
+            } catch(e) {
+                alert('Error connecting to prediction API');
+            }
+        }
+    </script>
+</body>
+</html>

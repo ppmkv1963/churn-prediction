@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>CC Churn Predictor — India</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+<div class="main-container">
+
+    <!-- LEFT PANEL -->
+    <div class="left-panel">
+        <img src="https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=800" alt="Banking">
+        <div class="overlay">
+            <h1>AI Banking Intelligence</h1>
+            <p>Credit Card Churn Prediction</p>
+
+        </div>
+    </div>
+
+    <!-- RIGHT PANEL -->
+    <div class="right-panel">
+        <h2>Customer Churn Analysis</h2>
+        <p class="subtitle">Enter customer details to predict churn risk</p>
+
+        <form id="predictionForm">
+            <div class="section-label">Demographics</div>
+            <div class="grid">
+                <select name="Gender">
+                    <option value="M">Male</option>
+                    <option value="F">Female</option>
+                </select>
+                <input type="number" name="Age" placeholder="Age (e.g. 38)" required>
+                <select name="City">
+                    <option value="Mumbai">Mumbai</option>
+                    <option value="Delhi">Delhi</option>
+                    <option value="Bangalore">Bangalore</option>
+                    <option value="Chennai">Chennai</option>
+                    <option value="Hyderabad">Hyderabad</option>
+                    <option value="Pune">Pune</option>
+                    <option value="Kolkata">Kolkata</option>
+                    <option value="Ahmedabad">Ahmedabad</option>
+                </select>
+                <select name="Education_Level">
+                    <option value="Graduate">Graduate</option>
+                    <option value="Post-Graduate">Post-Graduate</option>
+                    <option value="High School">High School</option>
+                    <option value="Doctorate">Doctorate</option>
+                    <option value="Uneducated">Uneducated</option>
+                </select>
+                <select name="Marital_Status">
+                    <option value="Married">Married</option>
+                    <option value="Single">Single</option>
+                    <option value="Divorced">Divorced</option>
+                </select>
+                <input type="number" name="Dependent_Count" placeholder="Dependents (0-5)" min="0" max="5">
+                <select name="Income_Category">
+                    <option value="₹6-10 Lakh">₹6-10 Lakh</option>
+                    <option value="₹3-6 Lakh">₹3-6 Lakh</option>
+                    <option value="₹10-15 Lakh">₹10-15 Lakh</option>
+                    <option value="₹15-25 Lakh">₹15-25 Lakh</option>
+                    <option value="< ₹3 Lakh">&lt; ₹3 Lakh</option>
+                    <option value="> ₹25 Lakh">&gt; ₹25 Lakh</option>
+                </select>
+                <select name="Card_Category">
+                    <option value="Silver">Silver</option>
+                    <option value="Gold">Gold</option>
+                    <option value="Platinum">Platinum</option>
+                    <option value="Signature">Signature</option>
+                </select>
+            </div>
+
+            <div class="section-label">Credit Profile</div>
+            <div class="grid">
+                <input type="number" name="Months_on_Book" placeholder="Months on Book" required>
+                <input type="number" name="Credit_Limit_INR" placeholder="Credit Limit ₹" required>
+                <input type="number" name="Total_Revolving_Bal" placeholder="Revolving Balance ₹" required>
+                <input type="number" name="Avg_Open_To_Buy" placeholder="Open to Buy ₹" required>
+                <input type="number" name="Avg_Utilization_Ratio" placeholder="Utilization (0.00-1.00)" step="0.01" required>
+            </div>
+
+            <div class="section-label">Behavioural Signals</div>
+            <div class="grid">
+                <input type="number" name="Months_Inactive_12mon" placeholder="Months Inactive" min="0" max="6" required>
+                <input type="number" name="Contacts_Count_12mon" placeholder="Contacts Count" min="0" max="6" required>
+                <input type="number" name="Total_Trans_Amt_INR" placeholder="Total Trans Amount ₹" required>
+                <input type="number" name="Total_Trans_Ct" placeholder="Total Trans Count" required>
+                <input type="number" name="Total_Ct_Chng_Q4_Q1" placeholder="Count Change Q4/Q1" step="0.01" required>
+                <input type="number" name="Total_Amt_Chng_Q4_Q1" placeholder="Amount Change Q4/Q1" step="0.01" required>
+            </div>
+
+            <button type="submit">Predict Churn Risk</button>
+        </form>
+
+        <div id="result" class="result-card"></div>
+    </div>
+
+</div>
+
+<script>
+document.getElementById("predictionForm").addEventListener("submit", async function(e) {
+    e.preventDefault();
+
+    const btn = this.querySelector("button");
+    btn.textContent = "Predicting...";
+    btn.disabled = true;
+
+    const formData = new FormData(this);
+    let data = {};
+    formData.forEach((value, key) => {
+        data[key] = isNaN(value) || value === "" ? value : Number(value);
+    });
+
+    try {
+        const response = await fetch("/predict", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify(data)
+        });
+
+        const result = await response.json();
+        const resultDiv = document.getElementById("result");
+
+        if (result.error) {
+            resultDiv.innerHTML = `<p class="error">Error: ${result.error}</p>`;
+            resultDiv.className = "result-card show error-card";
+        } else {
+            const isChurn   = result.prediction === 1;
+            const pct       = (result.churn_probability * 100).toFixed(1);
+            const color     = isChurn ? "#ff4d4d" : "#00e676";
+            const status    = isChurn ? "⚠️ High Churn Risk" : "✅ Low Churn Risk";
+
+            resultDiv.innerHTML = `
+                <h3 style="color:${color}">${status}</h3>
+                <p class="prob-text">Churn Probability: <strong>${pct}%</strong></p>
+                <div class="prob-bar-bg">
+                    <div class="prob-bar-fill" style="width:${pct}%;background:${color}"></div>
+                </div>
+                <p class="risk-text">Risk Level: <strong style="color:${color}">${result.risk_level}</strong></p>
+            `;
+            resultDiv.className = "result-card show";
+        }
+    } catch (err) {
+        document.getElementById("result").innerHTML = `<p class="error">Network error: ${err.message}</p>`;
+    }
+
+    btn.textContent = "Predict Churn Risk";
+    btn.disabled = false;
+});
+</script>
+
+</body>
+</html>
